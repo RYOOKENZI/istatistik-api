@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import comparisons, normality  # normality modülünü içeri aktardık
+from routers import normality  # normality modülünü içeri aktardık
 
 app = FastAPI(title="İstatistik Analiz API")
 
@@ -13,7 +13,7 @@ app.add_middleware(
 )
 
 # Modülleri yayınlıyoruz
-app.include_router(comparisons.router, prefix="/api/comparisons", tags=["Karşılaştırmalar"])
+#
 app.include_router(normality.router, prefix="/api/normality", tags=["Normallik Testleri"]) # Shapiro-Wilk burada çalışacak
 
 @app.get("/")
