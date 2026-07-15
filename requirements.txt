@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+scipy
+numpy
+pandas
+pingouin
+statsmodels
+lifelines
