@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routers import normality
+from routers import variance  # YENİ: variance router'ını projeye dahil ettik
 
 app = FastAPI(title="İstatistik Motoru API")
 
@@ -14,6 +15,7 @@ app.add_middleware(
 )
 
 app.include_router(normality.router)
+app.include_router(variance.router)  # YENİ: Levene testlerini API sistemine bağladık
 
 @app.get("/")
 async def root():
