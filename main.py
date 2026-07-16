@@ -22,3 +22,16 @@ def read_root():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/")
+async def root():
+    return {"status": "Uygulama çalışıyor!"}
+
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
