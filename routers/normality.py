@@ -101,3 +101,26 @@ async def perform_ks_lilliefors(input_data: DataInputKS):
         "is_normal": bool(p_value > 0.05),
         "plot_image": f"data:image/png;base64,{image_base64}"
     }
+
+
+@router.post("/ks-lilliefors")
+async def perform_ks_lilliefors(input_data: DataInputKS):
+    dataset = np.array(input_data.data)
+    test_type = input_data.test_type.lower()
+    n = len(dataset)
+    
+    # Parametreleri veriden tahmin ediyoruz
+    mu, std = dataset.mean(), dataset.std(ddof=1)
+    
+    # EĞER OTOMATİK İSE VE NORMAL DAĞILIM İSE -> LILLIEFORS KULLAN
+    if test_type == "lilliefors" or (test_type == "auto"):
+        from statsmodels.stats.diagnostic import lilliefors
+        # Lilliefors, parametrelerin veriden tahmin edildiğini bilir ve düzeltmesini yapar
+        stat, p_value = lilliefors(dataset, dist='norm', pvalmethod='approx')
+        test_name = "Lilliefors Düzeltmeli K-S Testi"
+    else:
+        # Standart K-S (Parametreler dışarıdan veriliyorsa)
+        stat, p_value = kstest(dataset, 'norm', args=(mu, std))
+        test_name = "Standart Kolmogorov-Smirnov Testi (Dikkat: Parametreler veriden tahmin edildi)"
+    
+    # ... grafik çizim kodları aynı ...
