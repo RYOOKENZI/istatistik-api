@@ -100,10 +100,11 @@ async def calculate_levene(request: LeveneRequest):
     }
 
     # Çıktıya "power" eklendi!
+    # routers/variance.py en altındaki return bloğu
     return {
         "statistic": float(stat),
         "p_value": float(p_val),
         "anova_table": anova_table,
-        "shapiro_p_values": shapiro_p_values,
-        "power": power
+        "shapiro_p_values": [float(sp) for sp in shapiro_p_values],
+        "power": float(power)  # Grafikteki sabit sayı kilidini açacak kritik değer
     }
