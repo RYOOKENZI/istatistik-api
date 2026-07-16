@@ -18,3 +18,7 @@ app.include_router(normality.router)
 @app.get("/")
 def read_root():
     return {"mesaj": "İstatistik API Motoru Sorunsuz Çalışıyor!"}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
