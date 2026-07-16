@@ -1,21 +1,20 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import normality  # normality modülünü içeri aktardık
+from routers import normality
 
-app = FastAPI(title="İstatistik Analiz API")
+app = FastAPI(title="İstatistik Motoru API")
 
+# Tarayıcı güvenlik duvarını (CORS) aşmak için gerekli ayar
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=["*"],  # Şimdilik her web sitesinden gelen isteği kabul et
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["*"],  # GET, POST vb. hepsine izin ver
     allow_headers=["*"],
 )
 
-# Modülleri yayınlıyoruz
-#
-app.include_router(normality.router, prefix="/api/normality", tags=["Normallik Testleri"]) # Shapiro-Wilk burada çalışacak
+app.include_router(normality.router)
 
 @app.get("/")
-def ana_sayfa():
-    return {"mesaj": "API Sistemine Hoş Geldiniz. Motor Aktif."}
+def read_root():
+    return {"mesaj": "İstatistik API Motoru Sorunsuz Çalışıyor!"}
