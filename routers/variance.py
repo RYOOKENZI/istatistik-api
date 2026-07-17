@@ -4,15 +4,24 @@ from typing import List, Optional
 import numpy as np
 from scipy import stats
 
+# Router sadece BİR KERE tanımlanmalı
 router = APIRouter(
     prefix="/test",
-    tags=["Variance"]
+    tags=["Varyans Testleri"]
 )
+
+# --- ŞEMALAR (MODELS) ---
 
 class LeveneRequest(BaseModel):
     groups: List[List[float]]
     center: str = 'median'
     alpha: float = 0.05
+
+class FTestRequest(BaseModel):
+    group1: List[float]
+    group2: List[float]
+
+# --- 1. LEVENE TESTİ ROTASI ---
 
 @router.post("/levene")
 async def calculate_levene(request: LeveneRequest):
@@ -33,15 +42,14 @@ async def calculate_levene(request: LeveneRequest):
         shapiro_p_values = []
         for g in groups:
             if len(g) >= 3:
-                # Eğer gruptaki tüm sayılar aynıysa (varyans 0 ise) Shapiro hata verir!
-                # Bunu engellemek için varyans kontrolü yapıyoruz.
+                # Varyans 0 ise Shapiro hata verir, bunu engelliyoruz.
                 if np.var(g) == 0:
-                    shapiro_p_values.append(1.0) # Tamamen aynı sayılar, teknik olarak normal değil ama çökmemesi için
+                    shapiro_p_values.append(1.0) 
                 else:
                     stat_sw, p_sw = stats.shapiro(g)
                     shapiro_p_values.append(float(p_sw))
             else:
-                shapiro_p_values.append(1.0) # 3 gözlemden az ise hesaplanamaz
+                shapiro_p_values.append(1.0) 
                 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Temel istatistik hatası: {str(e)}")
@@ -72,21 +80,17 @@ async def calculate_levene(request: LeveneRequest):
     
     # 4. GERÇEK MATEMATİKSEL TEST GÜCÜ (POST-HOC POWER) HESAPLAMASI
     try:
-        # Non-centrality parameter (lambda) hesaplaması
         f_stat = MS_b / MS_w if MS_w > 0 else 0
         nc_param = f_stat * df_b
         
-        # Seçilen alpha değerine göre Kritik F noktasını bulma
         f_crit = stats.f.ppf(1 - request.alpha, df_b, df_w)
-        
-        # Merkezi olmayan (Non-central) F dağılımının kümülatif yoğunluk fonksiyonu üzerinden Güç (Power)
         power = 1.0 - stats.ncf.cdf(f_crit, df_b, df_w, nc_param)
         
         power = float(power)
         if np.isnan(power):
             power = 0.0
     except:
-        power = 0.0 # Olası bir sıfıra bölünme hatasında yedek
+        power = 0.0 
 
     anova_table = {
         "df_b": int(df_b),
@@ -99,41 +103,21 @@ async def calculate_levene(request: LeveneRequest):
         "SS_t": float(SS_b + SS_w)
     }
 
-    # Çıktıya "power" eklendi!
-    # routers/variance.py en altındaki return bloğu
     return {
         "statistic": float(stat),
         "p_value": float(p_val),
         "anova_table": anova_table,
         "shapiro_p_values": [float(sp) for sp in shapiro_p_values],
-        "power": float(power)  # Grafikteki sabit sayı kilidini açacak kritik değer
+        "power": float(power) 
     }
 
-
-
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-import numpy as np
-import scipy.stats as stats
-
-# Eğer main.py'de prefix="/test" olarak tanımlamadıysan, buraya prefix="/test" ekleyebilirsin.
-# HTML dosyasındaki fetch isteği "/test/f-test" adresine gidiyor.
-router = APIRouter(
-    prefix="/test",
-    tags=["Varyans Testleri"]
-)
-
-# Gelen JSON verisinin şeması
-class FTestRequest(BaseModel):
-    group1: list[float]
-    group2: list[float]
+# --- 2. F-TESTİ ROTASI ---
 
 @router.post("/f-test")
 async def calculate_f_test(request: FTestRequest):
     g1 = np.array(request.group1)
     g2 = np.array(request.group2)
     
-    # Güvenlik kontrolü: En az 2 gözlem olmalı
     if len(g1) < 2 or len(g2) < 2:
         raise HTTPException(status_code=400, detail="Her iki grup için en az 2'şer gözlem gereklidir.")
     
@@ -144,15 +128,12 @@ async def calculate_f_test(request: FTestRequest):
     if var1 == 0 or var2 == 0:
         raise HTTPException(status_code=400, detail="Gruplardan birinin varyansı 0 olduğu için F istatistiği hesaplanamıyor.")
         
-    # F İstatistiği (s1^2 / s2^2)
     f_statistic = var1 / var2
     
-    # Serbestlik dereceleri (df = n - 1)
     df1 = len(g1) - 1
     df2 = len(g2) - 1
     
     # 2 Yönlü (2-tailed) P-değeri hesabı
-    # F dağılımının kümülatif fonksiyonu (CDF) kullanılarak iki kuyruklu p-değeri bulunur
     cdf_value = stats.f.cdf(f_statistic, df1, df2)
     p_value = 2 * min(cdf_value, 1 - cdf_value)
     
