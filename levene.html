@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+    <link rel="stylesheet" href="assets/css/prism.css">
+    <link rel="stylesheet" href="assets/css/quill.snow.css">
+    <link rel="stylesheet" href="assets/css/remixicon.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+
+    <script>
+        window.MathJax = {
+            options: { enableMenu: false },
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+    
+    <title>Levene Varyans Homojenliği Testi | StatLabseu</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+
+    <script>
+        if (localStorage.getItem('statlab_theme') === 'dark') { document.documentElement.classList.add('dark-mode'); }
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    </script>
+
+    <style>
+        @font-face {
+            font-family: 'STIX Two Math';
+            src: url('assets/fonts/STIXTwoMath-Regular.ttf') format('truetype');
+            font-weight: normal; font-style: normal;
+        }
+
+        .main-content { margin-left: 0 !important; width: 100% !important; padding: 20px; }
+        .math-var { font-family: 'STIX Two Math', serif !important; font-style: italic; font-weight: normal; color: #0f172a; display: inline-block; }
+
+        .custom-upload-zone { border: 2px dashed #2f8fe8 !important; background-color: rgba(47, 143, 232, 0.04); transition: all 0.2s ease-in-out; }
+        .custom-upload-zone:hover { background-color: rgba(47, 143, 232, 0.08); border-color: #1d7bd1 !important; transform: translateY(-1px); }
+        
+        .chart-container { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+        
+        .param-grid-table { width: 100%; border-collapse: separate; border-spacing: 0; text-align: left; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; }
+        .param-grid-table th { font-size: 13px; font-weight: 700; color: #475569; background-color: #f1f5f9; padding: 12px 10px; border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; }
+        .param-grid-table th:last-child { border-right: none; }
+        .param-grid-table td { padding: 12px 10px; font-size: 14px; color: #0f172a; border-bottom: 1px solid #edf2f7; border-right: 1px solid #edf2f7; background-color: #ffffff; }
+        .param-grid-table td:last-child { border-right: none; }
+        .param-grid-table tr:last-child td { border-bottom: none; }
+        .param-grid-table tr:hover td { background-color: #f8fafc; }
+
+        .info-box { background: linear-gradient(135deg, rgba(47, 143, 232, 0.1), rgba(14, 165, 233, 0.05)); border-left: 4px solid #2f8fe8; padding: 15px 20px; border-radius: 8px; margin-bottom: 25px; display: flex; align-items: flex-start; gap: 15px; }
+        .info-box i { font-size: 24px; color: #2f8fe8; }
+        .info-box p { margin: 0; font-size: 14px; color: #475569; line-height: 1.6; }
+
+        .loader-spinner { width: 40px; height: 40px; border: 4px solid rgba(47, 143, 232, 0.2); border-left-color: #2f8fe8; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .title-highlight { color: #2f8fe8; font-weight: 800; font-size: 1.15rem; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 3px solid #2f8fe8 !important; padding-bottom: 8px; display: inline-block; }
+
+        @keyframes pulse-btn {
+            0% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.8); }
+            70% { box-shadow: 0 0 0 15px rgba(14, 165, 233, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0); }
+        }
+        .btn-pulse { animation: pulse-btn 1.8s infinite; background: linear-gradient(135deg, #2f8fe8, #0ea5e9); border: none; color: white !important; }
+        .btn-pulse:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(14, 165, 233, 0.4); background: linear-gradient(135deg, #1d7bd1, #0284c7); }
+        .btn-action { font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; font-size: 13px; transition: all 0.3s ease; }
+
+        .quality-report-header { background: linear-gradient(135deg, #1e293b, #334155); color: white; padding: 15px 20px; border-radius: 10px 10px 0 0; }
+        .quality-report-body { background-color: #f8fafc; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 10px 10px; padding: 22px; }
+        .quality-report-item { font-size: 14.5px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 15px; margin-bottom: 15px; }
+        .quality-report-item:last-child { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
+
+        /* Gece Modu Ayarları */
+        html.dark-mode, html.dark-mode body { background-color: #0f172a !important; color: #f8fafc !important; }
+        html.dark-mode .bg-white, html.dark-mode .card, html.dark-mode .header-area, html.dark-mode .footer-area { background-color: #1e293b !important; border-color: #334155 !important; }
+        html.dark-mode .bg-light, html.dark-mode .bg-body-bg { background-color: #0f172a !important; }
+        html.dark-mode .text-dark { color: #f8fafc !important; }
+        html.dark-mode .text-secondary { color: #cbd5e1 !important; }
+        html.dark-mode .text-muted { color: #94a3b8 !important; }
+        html.dark-mode .info-box { background: rgba(47, 143, 232, 0.1); }
+        html.dark-mode .info-box p { color: #cbd5e1; }
+        html.dark-mode .math-var { color: #f8fafc !important; }
+        html.dark-mode .param-grid-table { border-color: #334155; }
+        html.dark-mode .param-grid-table th { background-color: #0f172a; color: #cbd5e1; border-color: #334155; }
+        html.dark-mode .param-grid-table td { background-color: #1e293b; color: #e2e8f0; border-color: #334155; }
+        html.dark-mode .param-grid-table tr:hover td { background-color: #0f172a !important; }
+        html.dark-mode .chart-container { background-color: #1e293b; border-color: #334155; }
+        .theme-btn { background-color: #f1f5f9; color: #475569; transition: all 0.3s; }
+        html.dark-mode .theme-btn { background-color: #334155; color: #f8fafc; }
+        html.dark-mode .theme-btn:hover { background-color: #475569; }
+        html.dark-mode .gauge-track { background: #334155 !important; box-shadow: inset 0 1px 4px rgba(0,0,0,0.5) !important; }
+        html.dark-mode #gaugeAlphaLine { background-color: #f8fafc !important; }
+        html.dark-mode #gaugeMarkerIcon { color: #f8fafc !important; }
+        html.dark-mode .quality-report-body { background-color: #0f172a; border-color: #334155; }
+        html.dark-mode .quality-report-item { border-color: #475569; color: #cbd5e1 !important; }
+        html.dark-mode .quality-report-header { background: linear-gradient(135deg, #2f8fe8, #0ea5e9); }
+        html.dark-mode #infoPanel { background-color: #1e293b !important; border-color: #334155 !important; color: #cbd5e1 !important; }
+        html.dark-mode #infoPanel h5 { color: #f8fafc !important; border-color: #475569 !important; }
+        html.dark-mode #infoPanel ul, html.dark-mode #infoPanel p { color: #cbd5e1 !important; }
+        html.dark-mode .alert-warning-custom { background-color: rgba(245, 158, 11, 0.1) !important; color: #e2e8f0 !important; border: 1px solid rgba(245, 158, 11, 0.2) !important; }
+        html.dark-mode .alert-warning-custom i { color: #fbbf24 !important; }
+        .p-val-badge { background-color: #e0f2fe; color: #1e40af; border: 1px solid #bae6fd; font-weight: 700; }
+        html.dark-mode .p-val-badge { background-color: rgba(47, 143, 232, 0.15) !important; color: #93c5fd !important; border-color: rgba(47, 143, 232, 0.3) !important; text-shadow: 0 0 5px rgba(96, 165, 250, 0.3); }
+        
+        .sw-success { color: #15803d !important; font-weight: 800; }
+        .sw-danger { color: #b91c1c !important; font-weight: 800; }
+        html.dark-mode .sw-success { color: #34d399 !important; }
+        html.dark-mode .sw-danger { color: #f87171 !important; }
+
+        .group-scroll-area { max-height: 380px; overflow-y: auto; overflow-x: hidden; padding-right: 5px; }
+        .group-scroll-area::-webkit-scrollbar { width: 6px; }
+        .group-scroll-area::-webkit-scrollbar-track { background: transparent; }
+        .group-scroll-area::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        html.dark-mode .group-scroll-area::-webkit-scrollbar-thumb { background: #475569; }
+
+        /* Terminal Stilleri */
+        .terminal-box { background-color: #1e293b; border-radius: 12px; overflow: hidden; font-family: 'Consolas', 'Courier New', monospace; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .terminal-header { background-color: #0f172a; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; }
+        .terminal-body { padding: 20px; color: #a5b4fc; font-size: 14px; overflow-x: auto; margin: 0; }
+        .term-keyword { color: #f472b6; }
+        .term-func { color: #38bdf8; }
+        .term-string { color: #a3e635; }
+        .term-comment { color: #64748b; font-style: italic; }
+    </style>
+</head>
+<body>
+
+    <canvas id="statLabCanvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; opacity: 0.6;"></canvas>
+
+    <div class="container" style="position: relative; z-index: 1;">
+        <div class="main-content d-flex flex-column">
+            
+            <header class="header-area bg-white mb-4 rounded-10 border border-white shadow-sm px-4 py-3 mt-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-3">
+                        <a href="index.html" class="btn theme-btn rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 42px; height: 42px;">
+                            <i class="ri-arrow-left-line fs-20"></i>
+                        </a>
+                        <div class="logo d-flex align-items-center">
+                            <img src="assets/images/logo-icon.png" alt="logo" width="35">
+                            <span class="fs-22 fw-bold text-dark ms-2 tracking-wider">StatLabseu</span>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="badge bg-primary-subtle text-primary py-2 px-3 rounded-pill fw-medium d-none d-sm-block">
+                            <i class="ri-rhythm-line align-middle me-1"></i> Levene Varyans Homojenliği Testi
+                        </span>
+                        <button id="theme-toggle" class="btn theme-btn rounded-circle border-0 d-flex align-items-center justify-content-center shadow-sm" style="width: 42px; height: 42px;">
+                            <i class="ri-moon-fill fs-20" id="theme-icon"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <div class="main-content-container overflow-hidden">
+                
+                <div class="info-box shadow-sm">
+                    <i class="ri-information-line"></i>
+                    <div>
+                        <strong class="d-block text-dark mb-1">Levene Varyans Homojenliği Analizi</strong>
+                        <p>ANOVA ve $t$-testi gibi parametrik testlerin en kritik varsayımlarından biri olan gruplar arası varyans homojenliğini sınar. İşlem, seçilen merkez ölçüsüne göre hesaplanan mutlak sapmalar üzerinden varyans analizi gerçekleştirir.</p>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- SOL PANEL -->
+                    <div class="col-lg-4 mb-4">
+                        <div class="card bg-white border-0 rounded-10 p-4 shadow-sm">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h4 class="fs-17 fw-semibold mb-0 text-dark">Veri Havuzu & Parametreler</h4>
+                                <span id="grupSayiRozet" class="badge bg-primary-subtle text-primary fw-medium rounded-pill">3/10 Grup</span>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <div class="custom-upload-zone p-3 rounded-10 text-center cursor-pointer" onclick="document.getElementById('dosyaGezgini').click()">
+                                    <i class="ri-upload-cloud-2-line text-primary fs-28 d-block mb-1"></i>
+                                    <h5 class="fs-13 fw-semibold text-dark mb-1">Çoklu Dosya Yükleyin</h5>
+                                    <span class="fs-11 text-muted d-block">Her sütun bir grubu temsil etmelidir (.csv, .xlsx)</span>
+                                    <input type="file" id="dosyaGezgini" accept=".csv, .txt, .pdf, .xlsx, .xls" style="display: none;">
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-medium text-secondary fs-13 mb-1">Merkez Ölçüsü (Yöntem)</label>
+                                <select id="merkezInput" class="form-select bg-light border-0 rounded-10 py-2 fs-13 cursor-pointer">
+                                    <option value="median" selected>Medyan (Brown-Forsythe Testi)</option>
+                                    <option value="mean">Ortalama (Klasik Levene Testi)</option>
+                                    <option value="trimmed">Kırpılmış Ortalama (%10 Trimmed)</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-medium text-secondary fs-13 mb-1">Anlamlılık Seviyesi ($\alpha$)</label>
+                                <select id="alfaInput" class="form-select bg-light border-0 rounded-10 py-2 fs-13 cursor-pointer">
+                                    <option value="0.05" selected>0.05 (%5 Kritik Eşik)</option>
+                                    <option value="0.01">0.01 (%1 Katı Sınır)</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <label class="form-label fw-medium text-secondary fs-13 mb-0">Gruplar (Maks. 1000 Gözlem / Grup)</label>
+                                    <button class="btn btn-sm btn-outline-primary py-0 px-2 rounded-pill fs-11" onclick="grupEkle()"><i class="ri-add-line"></i> Yeni Ekle</button>
+                                </div>
+                                <div id="gruplarKutusu" class="group-scroll-area">
+                                </div>
+                            </div>
+
+                            <div class="d-flex flex-column gap-3 mt-3 border-top pt-3 border-light">
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-outline-secondary w-50 py-2 rounded-10 btn-action" onclick="ornekVeriYukle()">
+                                        <i class="ri-magic-line align-middle me-1"></i> Örnek Veri
+                                    </button>
+                                    <button class="btn btn-outline-danger w-50 py-2 rounded-10 btn-action" onclick="temizleVeri()">
+                                        <i class="ri-delete-bin-line align-middle me-1"></i> Temizle
+                                    </button>
+                                </div>
+                                <button class="btn w-100 py-3 rounded-10 btn-action btn-pulse" onclick="baslatAnalizLoading()">
+                                    <i class="ri-bar-chart-2-fill align-middle me-1 fs-18"></i> VERİLERİ ANALİZ ET
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="leftPanelExtra" class="card border-0 rounded-10 shadow-sm mt-4 overflow-hidden" style="display: none;">
+                            <div class="quality-report-header d-flex align-items-center">
+                                <i class="ri-shield-check-fill fs-24 me-2"></i>
+                                <h5 class="fs-15 fw-bold mb-0 m-0 text-white">Veri Kalitesi Raporu</h5>
+                            </div>
+                            <div class="quality-report-body">
+                                <ul class="list-unstyled mb-0 text-dark">
+                                    <li class="d-flex justify-content-between align-items-center quality-report-item">
+                                        <span class="fw-medium">Toplam Gözlem ($n$):</span> 
+                                        <strong id="validObs" class="fs-18 text-primary"></strong>
+                                    </li>
+                                    <li class="d-flex justify-content-between align-items-center quality-report-item">
+                                        <span class="fw-medium">İşlenen Grup Sayısı ($k$):</span> 
+                                        <strong id="validGroups" class="fs-16 text-secondary"></strong>
+                                    </li>
+                                    <li class="d-flex justify-content-between align-items-center quality-report-item border-0 pb-0 mb-0">
+                                        <span class="fw-medium">Max/Min Grup $n_i$:</span> 
+                                        <strong id="maxMinInfo" class="text-primary fw-bold"></strong>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SAĞ PANEL -->
+                    <div class="col-lg-8 mb-4">
+                        <div class="card bg-white border-0 rounded-10 p-4 shadow-sm h-100">
+                            
+                            <div id="bosDurum" class="text-center py-5 my-auto">
+                                <i class="ri-pie-chart-2-line text-muted opacity-25" style="font-size: 4.5rem;"></i>
+                                <h5 class="text-muted mt-3 fs-16">Analiz Bekleniyor</h5>
+                                <p class="text-muted fs-14 mb-0">En az 2 grup için veri girin ve analizi başlatın.</p>
+                            </div>
+
+                            <div id="loadingOverlay" class="text-center py-5 my-auto" style="display: none;">
+                                <div class="loader-spinner"></div>
+                                <h5 class="text-primary mt-4 fs-16 fw-semibold">Analiz Motoru Çalışıyor...</h5>
+                            </div>
+
+                            <div id="aktifSonuc" style="display: none;">
+                                
+                                <div class="row mb-4 align-items-center">
+                                    <div class="col-md-5 text-center border-end d-flex flex-column justify-content-center px-4">
+                                        <h5 class="fs-12 fw-bold text-secondary mb-3 text-uppercase tracking-wider">$p$-Değeri Göstergesi</h5>
+                                        
+                                        <div class="linear-gauge-wrapper w-100 mt-2 mb-4" style="position: relative; padding: 0 10px;">
+                                            <div class="d-flex justify-content-between mb-2 fs-11 fw-bold text-muted px-1">
+                                                <span>0.0</span><span>0.5</span><span>1.0</span>
+                                            </div>
+                                            
+                                            <div class="gauge-track position-relative rounded-pill overflow-hidden" style="height: 14px; background: #e2e8f0; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);">
+                                                <div id="gaugeRedZone" class="position-absolute top-0 bottom-0" style="left: 0; width: 5%; background: linear-gradient(90deg, #f87171, #ef4444);"></div>
+                                                <div id="gaugeGreenZone" class="position-absolute top-0 bottom-0" style="left: 5%; right: 0; background: linear-gradient(90deg, #34d399, #10b981);"></div>
+                                                <div id="gaugeAlphaLine" class="position-absolute top-0 bottom-0 bg-dark" style="left: 5%; width: 2px; z-index: 2;"></div>
+                                            </div>
+                                            
+                                            <div class="position-relative mt-1" style="height: 45px;">
+                                                <div id="gaugeMarker" class="position-absolute d-flex flex-column align-items-center" style="left: 0%; transform: translateX(-50%); transition: left 1s cubic-bezier(0.22, 1, 0.36, 1); z-index: 3;">
+                                                    <i class="ri-arrow-up-s-fill fs-24" id="gaugeMarkerIcon" style="line-height: 0.5; color: #0f172a;"></i>
+                                                    <span id="gaugeMarkerText" class="badge bg-dark mt-1 fs-12 shadow-sm font-monospace text-white" style="white-space: nowrap;">0.0000</span>
+                                                </div>
+                                                <div id="gaugeAlphaLabel" class="position-absolute fw-bold fs-12 text-center" style="left: 50%; transform: translateX(-50%); bottom: -22px; color: #ef4444; text-shadow: 0px 0px 8px rgba(239,68,68,0.5); padding: 3px 12px; border-radius: 12px; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3); white-space: nowrap;">
+                                                    Kritik Eşik ($\alpha$): 0.05
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-7">
+                                        <div class="row g-3 text-center">
+                                            <div class="col-6">
+                                                <div class="p-3 bg-body-bg rounded-10 border border-light h-100 d-flex flex-column justify-content-center">
+                                                    <span class="d-block text-muted fs-11 fw-bold mb-1 text-uppercase">$p$-Değeri</span>
+                                                    <h3 id="pVal" class="text-primary mb-0 fw-bold fs-22"></h3>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="p-3 bg-body-bg rounded-10 border border-light h-100 d-flex flex-column justify-content-center">
+                                                    <span class="d-block text-muted fs-11 fw-bold mb-1 text-uppercase">Test İstatistiği ($F$)</span>
+                                                    <h3 id="fStat" class="text-secondary mb-0 fw-bold fs-22"></h3>
+                                                </div>
+                                            </div>
+                                            <div class="col-12">
+                                                <div class="p-2 bg-body-bg rounded-10 border border-light d-flex justify-content-between px-4">
+                                                    <span class="text-muted fs-12 fw-semibold">Serbestlik Derecesi (Gruplar, Hata):</span>
+                                                    <span id="dfVals" class="text-dark fw-bold fs-14"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- GRAFİKLER (Tamamı Alt Alta Büyük) -->
+                                <div class="row mb-3 g-4">
+                                    <div class="col-12">
+                                        <div class="chart-container py-3">
+                                            <h5 class="fs-13 fw-bold text-secondary mb-3 text-uppercase tracking-wider text-center"><i class="ri-funds-line me-1"></i> F Dağılım Eğrisi (Varyans Testi)</h5>
+                                            <div style="position: relative; height: 350px; width: 100%;">
+                                                <canvas id="distChartCanvas"></canvas>
+                                            </div>
+                                            <small class="d-block text-center text-muted fs-11 mt-2"><i class="ri-zoom-in-line align-middle"></i> Eğriyi yakınlaştırmak için kaydırın (Scroll to zoom)</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="chart-container py-3">
+                                            <h5 class="fs-13 fw-bold text-secondary mb-3 text-uppercase tracking-wider text-center"><i class="ri-radar-line me-1"></i> Test Gücü Dağılımı</h5>
+                                            <div style="position: relative; height: 350px; width: 100%;">
+                                                <canvas id="powerChartCanvas"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="chart-container py-3">
+                                            <h5 class="fs-13 fw-bold text-secondary mb-3 text-uppercase tracking-wider text-center"><i class="ri-bar-chart-grouped-line me-1"></i> Mutlak Sapma Ortalamaları</h5>
+                                            <div style="position: relative; height: 300px; width: 100%;">
+                                                <canvas id="madChartCanvas"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="chart-container py-3">
+                                            <h5 class="fs-13 fw-bold text-secondary mb-3 text-uppercase tracking-wider text-center"><i class="ri-bar-chart-2-fill me-1"></i> Grupların Histogramı</h5>
+                                            <div style="position: relative; height: 300px; width: 100%;">
+                                                <canvas id="histChartCanvas"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <h6 class="fs-14 fw-bold text-secondary mb-3 ms-1"><i class="ri-list-check-2 align-middle text-primary"></i> Grup Özet Tablosu</h6>
+                                    <div class="table-responsive">
+                                        <table class="param-grid-table mb-4">
+                                            <thead>
+                                                <tr>
+                                                    <th>Grup Adı</th>
+                                                    <th>$n$</th>
+                                                    <th>Ortalama</th>
+                                                    <th>Medyan</th>
+                                                    <th>Std. Sapma ($S$)</th>
+                                                    <th>Normallik ($p$)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="groupSummaryBody"></tbody>
+                                        </table>
+                                    </div>
+
+                                    <h6 class="fs-14 fw-bold text-secondary mb-3 ms-1"><i class="ri-calculator-line align-middle text-primary"></i> ANOVA Tablosu</h6>
+                                    <div class="table-responsive">
+                                        <table class="param-grid-table" style="text-align: center;">
+                                            <thead>
+                                                <tr>
+                                                    <th style="text-align: left;">Kaynak<br><span class="text-muted fw-normal">(Source)</span></th>
+                                                    <th>Serbestlik<br><span class="text-muted fw-normal">($df$)</span></th>
+                                                    <th>Kareler Top.<br><span class="text-muted fw-normal">($SS$)</span></th>
+                                                    <th>Ort. Kare<br><span class="text-muted fw-normal">($MS$)</span></th>
+                                                    <th>Test Değeri<br><span class="text-muted fw-normal">($F$)</span></th>
+                                                    <th>$p$-Değeri</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="anovaBody"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <div id="kararKutusu" class="alert border-0 p-3 mb-4 rounded-10 d-flex align-items-start">
+                                    <div class="d-flex justify-content-center mt-1 me-3">
+                                        <i id="kararIkon" class="fs-22"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h5 id="kararBaslik" class="mb-1 fs-15 fw-bold"></h5>
+                                        <p id="kararAciklama" class="mb-0 fs-14 text-muted lh-base"></p>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-12 mb-4">
+                        <div class="card bg-white border-0 rounded-10 p-4 shadow-sm text-center">
+                            <h4 class="title-highlight mb-4"><i class="ri-function-line align-middle me-1"></i> Levene Testi Formülasyonu</h4>
+                            
+                            <div class="p-2 d-flex flex-column align-items-center justify-content-center">
+                                
+                                <div class="fs-15 mb-4 text-secondary text-start d-inline-block">
+                                    <div class="mb-2">$$H_0 : \sigma_1^2 = \sigma_2^2 = \dots = \sigma_k^2 \text{ (Grupların varyansları homojendir)}$$</div>
+                                    <div>$$H_1 : \sigma_i^2 \neq \sigma_j^2 \text{ en az bir } (i \neq j) \text{ için (Grupların varyansları heterojendir)}$$</div>
+                                </div>
+
+                                <div class="fs-18 mt-2 bg-body-bg p-4 rounded-10 border border-light w-100 text-center" style="max-width: 400px; overflow-x: auto;">
+                                    $$ F = \frac{MSG}{MSE} $$
+                                </div>
+                                <div class="text-muted fs-13 mt-2 font-monospace">
+                                    * Formülde test istatistiği <span class="fw-bold text-dark">F</span> harfi ile temsil edilir.
+                                </div>
+
+                                <div class="mt-4 w-100" style="max-width: 100%;">
+                                    <button class="btn btn-outline-primary border-2 fw-bold px-4 py-3 rounded-10 shadow-sm transition-all w-100 d-flex justify-content-between align-items-center" onclick="toggleInfoPanel()" id="infoBtn">
+                                        <span><i class="ri-book-open-line me-2"></i> Detaylı Bilgilendirme, Parametreler ve ANOVA Tablosu Formülleri</span>
+                                        <i class="ri-arrow-down-s-line fs-20" id="infoBtnIcon"></i>
+                                    </button>
+                                    
+                                    <div id="infoPanel" class="mt-3 p-4 bg-light rounded-10 border border-light shadow-sm text-start transition-all" style="display: none; font-size: 14.5px; line-height: 1.8; color: #334155;">
+                                        
+                                        <!-- YENİ EKLENEN LEVENE TESTİ BİLGİLENDİRME METNİ -->
+                                        <h5 class="fw-bold text-dark fs-16 mb-3 border-bottom pb-2 border-secondary">Levene Testi Nedir?</h5>
+                                        <p class="mb-3 text-dark">Levene testi, iki veya daha fazla grubun değişkenlikleri arasındaki farkın istatistiksel olarak anlamlı olup olmadığını kontrol eder.</p>
+                                        
+                                        <ul class="mb-4 text-dark list-unstyled ps-2 border-start border-3 border-primary">
+                                            <li class="mb-2"><strong class="text-primary">Neyi Karşılaştırır?</strong> Levene testi doğrudan varyansları karşılaştırmaz; bunun yerine veri değişkenliğini ölçmenin başka bir yolu olan Ortalama Mutlak Sapmaları (MAD) karşılaştırır. Öte yandan, eğer bu ortalama mutlak sapmalar birbirinden farklıysa, varyansların da farklı olma olasılığı çok yüksektir.</li>
+                                            <li class="mb-2"><strong class="text-primary">Nasıl Çalışır?</strong> Levene testi, her bir grubun kendi merkezinden olan mutlak sapmaları üzerinden bir ANOVA (Varyans Analizi) testi gerçekleştirir.</li>
+                                            <li class="mb-2"><strong class="text-primary">Grup Merkezi Seçimi:</strong> Grup merkezi olarak "ortalama" (mean) veya "medyan" (ortanca) kullanılabilir:
+                                                <ul class="mt-1 ps-4" style="list-style-type: disc;">
+                                                    <li>Merkez olarak ortalama kullanıldığında bu teste <strong>Levene Testi</strong> denir.</li>
+                                                    <li>Merkez olarak medyan kullanıldığında ise teste <strong>Brown-Forsythe Testi</strong> adı verilir.</li>
+                                                </ul>
+                                            </li>
+                                            <li class="mb-2"><strong class="text-primary">ANOVA'nın Amacı:</strong> Bu sapmalar üzerinde ANOVA testi yaparken temel amacımız şudur: Ortalama mutlak sapmalar (MAD) arasındaki fark, gruplar arasındaki gerçek bir farkı mı yansıtıyor, yoksa yalnızca grupların kendi içindeki rastgele gürültüden (şans faktöründen) mi kaynaklanıyor?</li>
+                                            <li class="mb-2"><strong class="text-primary">F İstatistiği:</strong> Hesaplanan F istatistiği, gruplar arası varyansın, grup içi varyansa oranını ifade eder. Birçok istatistiksel testin aksine, F istatistiği ne kadar küçük çıkarsa, ortalamaların eşit olma olasılığı o kadar yüksektir.</li>
+                                            <li class="mb-2"><strong class="text-primary">Kuyruk Yönü:</strong> Bu, sağ kuyruklu (right-tailed) bir F testidir; ANOVA testi için yalnızca dağılımın sağ kuyruğunu kullanırsınız.</li>
+                                        </ul>
+                                        <!-- / BİTİŞ -->
+
+                                        <h5 class="fw-bold text-dark fs-16 mb-3 border-bottom pb-2 border-secondary">ANOVA Tablosu Formülleri</h5>
+                                        
+                                        <div class="mb-3">
+                                            <h6 class="fw-bold text-primary fs-15 mb-2">Parametreler</h6>
+                                            <ul class="mb-4 text-dark list-unstyled ps-2 border-start border-3 border-primary">
+                                                <li class="mb-1"><strong class="text-primary">$k$ :</strong> Grup sayısı.</li>
+                                                <li class="mb-1"><strong class="text-primary">$n_i$ :</strong> $i$. grubun örneklem hacmi.</li>
+                                                <li class="mb-1"><strong class="text-primary">$n$ :</strong> Toplam örneklem hacmi, tüm grupları içerir ($n = \sum_{i=1}^k n_i$).</li>
+                                                <li class="mb-1"><strong class="text-primary">$\bar{x}_i$ :</strong> $i$. grupta, grup merkezinden olan mutlak sapmaların ortalaması.</li>
+                                                <li class="mb-1"><strong class="text-primary">$\bar{x}$ :</strong> Genel ortalama ($\bar{x} = \sum_{i=1}^k \sum_{j=1}^{n_i} x_{i,j} / n$).</li>
+                                                <li class="mb-1"><strong class="text-primary">$S_i$ :</strong> $i$. grubun standart sapması.</li>
+                                            </ul>
+                                            <p class="text-muted fs-13 fst-italic">Levene testi için, her değer ($x_{i,j}$) ait olduğu grubun merkezinden olan mutlak farktır.</p>
+                                        </div>
+
+                                        <div class="table-responsive mb-4">
+                                            <table class="param-grid-table bg-white">
+                                                <thead>
+                                                    <tr>
+                                                        <th style="text-align: left;">Kaynak<br><span class="text-muted fw-normal">(Source)</span></th>
+                                                        <th>Serbestlik Derecesi<br><span class="text-muted fw-normal">(Degrees of Freedom)</span></th>
+                                                        <th>Kareler Toplamı<br><span class="text-muted fw-normal">(Sum of Squares)</span></th>
+                                                        <th>Ortalama Kare<br><span class="text-muted fw-normal">(Mean Square)</span></th>
+                                                        <th>Test İstatistiği<br><span class="text-muted fw-normal">(F statistic)</span></th>
+                                                        <th>$p$-Değeri<br><span class="text-muted fw-normal">(p-value)</span></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td class="fw-bold">Gruplar<br><span class="fw-normal text-muted fs-12">(between groups)</span></td>
+                                                        <td style="text-align: center; vertical-align: middle;">$$k - 1$$</td>
+                                                        <td style="text-align: center; vertical-align: middle;">$$SSG = \sum_{i=1}^{k} n_i (\bar{x}_i - \bar{x})^2$$</td>
+                                                        <td style="text-align: center; vertical-align: middle;">$$MSG = \frac{SSG}{k - 1}$$</td>
+                                                        <!-- FORMÜLLERDEN RENKLER KALDIRILDI -->
+                                                        <td class="fw-bold" style="text-align: center; vertical-align: middle;">$$F = \frac{MSG}{MSE}$$</td>
+                                                        <td class="fw-bold" style="text-align: center; vertical-align: middle;">$$P(x > F)$$</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="fw-bold">Hata<br><span class="fw-normal text-muted fs-12">(within groups)</span></td>
+                                                        <td style="text-align: center; vertical-align: middle;">$$n - k$$</td>
+                                                        <td style="text-align: center; vertical-align: middle;">$$SSE = \sum_{i=1}^{k} (n_i - 1) S_i^2$$</td>
+                                                        <td style="text-align: center; vertical-align: middle;">$$MSE = \frac{SSE}{n - k}$$</td>
+                                                        <td></td>
+                                                        <td></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="fw-bold">Toplam<br><span class="fw-normal text-muted fs-12">(Total)</span></td>
+                                                        <td style="text-align: center; vertical-align: middle;">$$n - 1$$</td>
+                                                        <td style="text-align: center; vertical-align: middle;">$$SS(total) = SSG + SSE$$</td>
+                                                        <td class="fw-bold" style="text-align: center; vertical-align: middle;">Örneklem Varyansı<br>$$\frac{SS(total)}{n - 1}$$</td>
+                                                        <td></td>
+                                                        <td></td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        <h5 class="fw-bold text-dark fs-16 mb-3 border-bottom pb-2 border-secondary">Karar Kuralı (Sağ Kuyruklu Test)</h5>
+                                        <p class="mb-4">Elde edilen $F$ istatistiği, $F(k-1, n-k)$ serbestlik derecelerine sahip bir F dağılımı ile kıyaslanır. Test <strong>sağ kuyruklu (right-tailed)</strong> bir testtir; yani hesaplanan $F$ değeri kritik sınırın sağında (red bölgesinde) kalıyorsa ve buna bağlı $p$-değeri belirlenen $\alpha$ eşiğinden küçükse, varyansların homojen olmadığı ($H_0$ reddedilir) sonucuna varılır.</p>
+
+                                        <!-- TAŞINAN R TERMİNAL KUTUSU -->
+                                        <h5 class="fw-bold text-dark fs-16 mt-5 mb-3 border-bottom pb-2 border-secondary">R Kullanarak Levene Testi</h5>
+                                        <div class="terminal-box">
+                                            <div class="terminal-header">
+                                                <span class="text-white fw-bold fs-14"><i class="ri-terminal-box-fill text-primary me-2"></i>R Terminal - Levene Analysis</span>
+                                                <button class="btn btn-sm btn-outline-light border-0 py-0" onclick="copyRCode()" title="Kodu Kopyala"><i class="ri-file-copy-line fs-16"></i></button>
+                                            </div>
+                                            <pre class="terminal-body" id="rCodeBlock">
+<span class="term-comment"># Levene Testi için 'car' paketini yükleyin ve çağırın</span>
+<span class="term-func">install.packages</span>(<span class="term-string">"car"</span>)
+<span class="term-keyword">library</span>(car)
+
+<span class="term-comment"># Veri setini oluşturun (Örnek format)</span>
+veri &lt;- <span class="term-func">data.frame</span>(
+  deger = <span class="term-func">c</span>(grup1_verileri, grup2_verileri, ...),
+  grup = <span class="term-func">as.factor</span>(<span class="term-func">rep</span>(<span class="term-func">c</span>(<span class="term-string">"Grup1"</span>, <span class="term-string">"Grup2"</span>, ...), times = <span class="term-func">c</span>(n1, n2, ...)))
+)
+
+<span class="term-comment"># Varyans Homojenliği Testini Çalıştır (Merkez = Medyan)</span>
+<span class="term-func">leveneTest</span>(deger ~ grup, data = veri, center = median)</pre>
+                                        </div>
+                                        <!-- / R TERMİNAL BİTİŞ -->
+
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            
+            <footer class="footer-area bg-white text-center rounded-10 rounded-bottom-0 p-3 mt-4 border-top shadow-sm">
+                <p class="fs-14 text-body mb-0">© <span>StatLabseu</span> - Gelişmiş İstatistiksel Analiz Platformu</p>
+            </footer>
+
+        </div>
+    </div>
+ 
+    <script src="assets/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        function safeSetText(id, text) { let el = document.getElementById(id); if(el) el.innerText = text; }
+        function safeSetHTML(id, html) { let el = document.getElementById(id); if(el) el.innerHTML = html; }
+        function safeSetClass(id, cls) { let el = document.getElementById(id); if(el) el.className = cls; }
+
+        // Küresel Grafik Instance Değişkenleri
+        window.madChartInstance = null;
+        window.histChartInstance = null;
+        window.distChartInstance = null;
+        window.powerChartInstance = null;
+
+        if (typeof window['chartjs-plugin-zoom'] !== 'undefined') { Chart.register(window['chartjs-plugin-zoom']); }
+
+        // DİNAMİK GRUP VERİSİ YÖNETİMİ
+        let groupData = ["", "", ""]; // Başlangıçta 3 boş grup
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggleBtn = document.getElementById('theme-toggle');
+            const themeIcon = document.getElementById('theme-icon');
+            const htmlEl = document.documentElement;
+            
+            if (localStorage.getItem('statlab_theme') === 'dark') { themeIcon.classList.replace('ri-moon-fill', 'ri-sun-fill'); themeIcon.classList.add('text-warning'); }
+
+            toggleBtn.addEventListener('click', () => {
+                htmlEl.classList.toggle('dark-mode');
+                if (htmlEl.classList.contains('dark-mode')) {
+                    themeIcon.classList.replace('ri-moon-fill', 'ri-sun-fill'); themeIcon.classList.add('text-warning'); themeIcon.classList.remove('text-secondary'); localStorage.setItem('statlab_theme', 'dark');
+                } else {
+                    themeIcon.classList.replace('ri-sun-fill', 'ri-moon-fill'); themeIcon.classList.remove('text-warning'); themeIcon.classList.add('text-secondary'); localStorage.setItem('statlab_theme', 'light');
+                }
+                if(document.getElementById('aktifSonuc').style.display === 'block') { baslatAnalizLoading(); }
+            });
+
+            renderGruplar();
+        });
+
+        function syncGroups() {
+            for(let i=0; i<groupData.length; i++) {
+                let el = document.getElementById('veri_' + (i+1));
+                if(el) groupData[i] = el.value;
+            }
+        }
+
+        function renderGruplar() {
+            let container = document.getElementById('gruplarKutusu');
+            container.innerHTML = '';
+            
+            groupData.forEach((val, idx) => {
+                let id = idx + 1;
+                let div = document.createElement('div');
+                div.className = 'mb-2 position-relative';
+                div.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label class="form-label fw-bold text-secondary fs-12 mb-0">${id}. Grup</label>
+                        ${groupData.length > 2 ? `<button class="btn btn-sm text-danger p-0 border-0 transition-all hover-scale" onclick="grupSil(${idx})" title="Grubu Sil"><i class="ri-close-circle-fill fs-16"></i></button>` : ''}
+                    </div>
+                    <textarea id="veri_${id}" class="form-control bg-light border-0 p-2 fs-13 text-secondary rounded-10" rows="2" placeholder="Sayıları girin (virgül, boşluk veya alt alta)...">${val}</textarea>
+                `;
+                container.appendChild(div);
+                
+                // Anlık veri senkronizasyonu
+                document.getElementById(`veri_${id}`).addEventListener('input', function() {
+                    groupData[idx] = this.value;
+                });
+            });
+            document.getElementById('grupSayiRozet').innerText = groupData.length + "/10 Grup";
+        }
+
+        function grupEkle() {
+            syncGroups();
+            if(groupData.length >= 10) { alert("Maksimum 10 grup ekleyebilirsiniz."); return; }
+            groupData.push(""); // Yeni boş grup ekle
+            renderGruplar();
+        }
+
+        function grupSil(idx) {
+            syncGroups();
+            if(groupData.length <= 2) return;
+            groupData.splice(idx, 1); // Seçili grubu listeden tamamen uçur, alttakiler otomatik kayar
+            renderGruplar();
+        }
+
+        function toggleInfoPanel() {
+            let panel = document.getElementById("infoPanel");
+            let icon = document.getElementById("infoBtnIcon");
+            let btn = document.getElementById("infoBtn");
+            if(panel.style.display === "none") {
+                panel.style.display = "block";
+                icon.classList.replace('ri-arrow-down-s-line', 'ri-arrow-up-s-line');
+                btn.classList.add('bg-primary-subtle');
+                if (window.MathJax && window.MathJax.typesetPromise) window.MathJax.typesetPromise([panel]);
+            } else {
+                panel.style.display = "none";
+                icon.classList.replace('ri-arrow-up-s-line', 'ri-arrow-down-s-line');
+                btn.classList.remove('bg-primary-subtle');
+            }
+        }
+
+        function verileriKutudanCek(text) {
+            if (!text) return [];
+            let words = text.replace(/,/g, '.').split(/[\s;:\r\n\t]+/);
+            let numbers = [];
+            for(let i=0; i<words.length; i++) {
+                let w = words[i].trim();
+                if(w !== '') { let n = Number(w); if(!isNaN(n)) numbers.push(n); }
+            }
+            return numbers;
+        }
+
+        function ornekVeriYukle() {
+            syncGroups();
+            // Yalnızca mevcutta kaç tane grup varsa onları doldurur (Otomatik yeni grup yaratmaz)
+            groupData.forEach((val, index) => {
+                let n = 35 + Math.floor(Math.random() * 15);
+                let mean = 50 + (index * 2);
+                let sd = 4 + (index * 8);
+                let data = [];
+                for(let i=0; i<n; i++) {
+                    let u = 0, v = 0; while(u === 0) u = Math.random(); while(v === 0) v = Math.random();
+                    let num = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+                    data.push((num * sd + mean).toFixed(2));
+                }
+                groupData[index] = data.join('\n');
+            });
+            renderGruplar();
+        }
+
+        function temizleVeri() {
+            groupData = ["", "", ""]; // Temizleyince default 3 boş gruba döner
+            renderGruplar();
+            document.getElementById('dosyaGezgini').value = '';
+            document.getElementById('aktifSonuc').style.display = 'none'; document.getElementById('leftPanelExtra').style.display = 'none';
+            document.getElementById('loadingOverlay').style.display = 'none'; document.getElementById('bosDurum').style.display = 'block';
+            if(window.madChartInstance) window.madChartInstance.destroy();
+            if(window.histChartInstance) window.histChartInstance.destroy();
+            if(window.distChartInstance) window.distChartInstance.destroy();
+            if(window.powerChartInstance) window.powerChartInstance.destroy();
+        }
+
+        function baslatAnalizLoading() {
+            syncGroups();
+            let aktifGruplarVeri = [];
+            let gozlemSayisi = 0;
+            
+            groupData.forEach((txt, idx) => {
+                let data = verileriKutudanCek(txt);
+                if(data.length > 1) { 
+                    aktifGruplarVeri.push({isim: `${idx+1}. Grup`, data: data}); 
+                    gozlemSayisi += data.length; 
+                }
+            });
+            
+            if (aktifGruplarVeri.length < 2) { alert("Test için en az 2 grupta geçerli veri olmalıdır."); return; }
+            if (gozlemSayisi > 1000) { alert(`Maksimum 1000 gözlem girebilirsiniz! (Şu an: ${gozlemSayisi})`); return; }
+            
+            document.getElementById('bosDurum').style.display = 'none'; document.getElementById('aktifSonuc').style.display = 'none';
+            document.getElementById('loadingOverlay').style.display = 'block';
+            setTimeout(() => analizEtLeveneAPI(aktifGruplarVeri), 800);
+        }
+
+        function animateCounter(id, targetValue, duration) {
+            let obj = document.getElementById(id); let markerText = document.getElementById('gaugeMarkerText');
+            let startTime = null;
+            function step(timestamp) {
+                if (!startTime) startTime = timestamp;
+                let progress = Math.min((timestamp - startTime) / duration, 1);
+                let current = targetValue * (1 - Math.pow(1 - progress, 3));
+                if(obj) obj.innerText = current.toFixed(4);
+                if(markerText) markerText.innerText = current.toFixed(4);
+                if (progress < 1) window.requestAnimationFrame(step);
+                else {
+                    if(obj) obj.innerText = targetValue.toFixed(4);
+                    if(markerText) markerText.innerText = targetValue.toFixed(4);
+                }
+            }
+            window.requestAnimationFrame(step);
+        }
+
+        function guncelleLinearGauge(pValue, alpha) {
+            let alphaPct = alpha * 100;
+            document.getElementById('gaugeRedZone').style.width = alphaPct + "%";
+            document.getElementById('gaugeGreenZone').style.left = alphaPct + "%";
+            document.getElementById('gaugeAlphaLine').style.left = alphaPct + "%";
+            safeSetHTML('gaugeAlphaLabel', `Kritik Eşik ($\\alpha$): ${alpha}`);
+
+            let marker = document.getElementById('gaugeMarker');
+            marker.style.transition = "none"; marker.style.left = "0%"; void marker.offsetWidth;
+            
+            let safeP = Math.min(pValue, 1);
+            let visualLeft = Math.max(4, Math.min(safeP * 100, 94));
+            marker.style.transition = "left 1.2s cubic-bezier(0.22, 1, 0.36, 1)";
+            marker.style.left = visualLeft + "%";
+
+            let icon = document.getElementById('gaugeMarkerIcon'); let text = document.getElementById('gaugeMarkerText');
+            if(pValue > alpha) {
+                icon.className = "ri-arrow-up-s-fill fs-24 text-success"; text.className = "badge bg-success mt-1 fs-12 shadow-sm font-monospace text-white border border-success";
+            } else {
+                icon.className = "ri-arrow-up-s-fill fs-24 text-danger"; text.className = "badge bg-danger mt-1 fs-12 shadow-sm font-monospace text-white border border-danger";
+            }
+            animateCounter('pVal', pValue, 1200);
+        }
+
+        function getZoomOptions() { return { zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' }, pan: { enabled: true, mode: 'x' } }; }
+        function fPDF(x, d1, d2) {
+            if (x <= 0) return 0;
+            return Math.exp((d1/2)*Math.log(d1) + (d2/2)*Math.log(d2) + (d1/2-1)*Math.log(x) - ((d1+d2)/2)*Math.log(d1*x+d2) - (lgamma(d1/2) + lgamma(d2/2) - lgamma((d1+d2)/2)));
+        }
+        function lgamma(x) {
+            let j = 0, cof = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
+            let ser = 1.000000000190015; let tmp = x + 5.5; tmp -= (x + 0.5) * Math.log(tmp);
+            for (j = 0; j < 6; j++) ser += cof[j] / (x + j + 1);
+            return -tmp + Math.log(2.5066282746310005 * ser / x);
+        }
+
+        function copyRCode() {
+            const code = document.getElementById("rCodeBlock").innerText;
+            navigator.clipboard.writeText(code).then(() => { alert("R kodu başarıyla kopyalandı!"); });
+        }
+
+        async function analizEtLeveneAPI(gruplar) {
+            try {
+                let alfa = parseFloat(document.getElementById('alfaInput').value);
+                let merkez = document.getElementById('merkezInput').value;
+                let k = gruplar.length;
+                let N = gruplar.reduce((acc, g) => acc + g.data.length, 0);
+                
+                let payload = { groups: gruplar.map(g => g.data), center: merkez, alpha: alfa };
+
+                let istek = await fetch("https://api.statlabseu.com/test/levene", {
+                    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload)
+                });
+                
+                if (!istek.ok) throw new Error("API Yanıt Vermedi (Sunucu Hatası)");
+                let sonuc = await istek.json();
+                
+                let fDegeri = sonuc.statistic;
+                let pDegeri = sonuc.p_value;
+                let anovaStats = sonuc.anova_table;
+                let shapiroP_Listesi = sonuc.shapiro_p_values || [];
+                let testGucu = sonuc.power !== undefined ? sonuc.power : 0;
+                
+                let df1 = k - 1; 
+                let df2 = N - k;
+
+                let minN = Math.min(...gruplar.map(g => g.data.length));
+                let maxN = Math.max(...gruplar.map(g => g.data.length));
+                safeSetText('validObs', N);
+                safeSetText('validGroups', k);
+                safeSetText('maxMinInfo', `${maxN} / ${minN}`);
+
+                guncelleLinearGauge(pDegeri, alfa);
+                safeSetText('fStat', fDegeri.toFixed(4));
+                safeSetText('dfVals', `${df1}, ${df2}`);
+
+                // TABLOLAR
+                let tBodyGrup = document.getElementById('groupSummaryBody'); tBodyGrup.innerHTML = '';
+                let madMeans = []; let histDatasets = [];
+                const colorPalette = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16', '#6366f1', '#f43f5e'];
+
+                gruplar.forEach((g, i) => {
+                    let cData = [...g.data].sort((a,b)=>a-b); let nn = cData.length;
+                    let sum = cData.reduce((a,b)=>a+b,0); let mean = sum/nn;
+                    let med = nn%2===0 ? (cData[nn/2-1]+cData[nn/2])/2 : cData[Math.floor(nn/2)];
+                    let ss = Math.sqrt(cData.reduce((acc, v) => acc + Math.pow(v - mean, 2), 0) / (nn - 1));
+                    
+                    let swP = shapiroP_Listesi[i] !== undefined ? shapiroP_Listesi[i] : 1.0; 
+                    let swColorClass = swP >= 0.05 ? "sw-success" : "sw-danger";
+
+                    let tr = document.createElement('tr');
+                    tr.innerHTML = `<td class="fw-medium">${g.isim}</td><td>${nn}</td><td>${mean.toFixed(3)}</td><td>${med.toFixed(3)}</td><td>${ss.toFixed(3)}</td><td class="${swColorClass}">${swP.toFixed(4)}</td>`;
+                    tBodyGrup.appendChild(tr);
+
+                    let c = colorPalette[i%10];
+                    let z_vals = g.data.map(v => Math.abs(v - (merkez==='mean'?mean:med)));
+                    let zMean = z_vals.reduce((a,b)=>a+b,0)/nn;
+                    madMeans.push({label: g.isim, mean: zMean, color: c});
+
+                    let bins = {}; cData.forEach(v => { let b = Math.floor(v); bins[b] = (bins[b]||0)+1; });
+                    let sData = Object.keys(bins).map(k => ({x: parseFloat(k), y: bins[k]}));
+                    histDatasets.push({ label: g.isim, data: sData, backgroundColor: c+'88', borderColor: c, borderWidth: 1, type: 'bar' });
+                });
+
+                let tBodyAnova = document.getElementById('anovaBody');
+                if(anovaStats) {
+                    tBodyAnova.innerHTML = `
+                        <tr>
+                            <td class="fw-medium bg-light">Gruplar<br><span class="fw-normal text-muted fs-12">(between groups)</span></td>
+                            <td style="text-align: center; vertical-align: middle;">${anovaStats.df_b}</td>
+                            <td style="text-align: center; vertical-align: middle;">${anovaStats.SS_b.toFixed(3)}</td>
+                            <td style="text-align: center; vertical-align: middle;">${anovaStats.MS_b.toFixed(3)}</td>
+                            <td class="fw-bold text-dark" style="text-align: center; vertical-align: middle;">${fDegeri.toFixed(4)}</td>
+                            <td class="fw-bold text-primary" style="text-align: center; vertical-align: middle;">${pDegeri.toFixed(4)}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-medium bg-light">Hata<br><span class="fw-normal text-muted fs-12">(within groups)</span></td>
+                            <td style="text-align: center; vertical-align: middle;">${anovaStats.df_w}</td>
+                            <td style="text-align: center; vertical-align: middle;">${anovaStats.SS_w.toFixed(3)}</td>
+                            <td style="text-align: center; vertical-align: middle;">${anovaStats.MS_w.toFixed(3)}</td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        <tr class="fw-bold">
+                            <td class="bg-light">Toplam<br><span class="fw-normal text-muted fs-12">(Total)</span></td>
+                            <td style="text-align: center; vertical-align: middle;">${anovaStats.df_t}</td>
+                            <td style="text-align: center; vertical-align: middle;">${anovaStats.SS_t.toFixed(3)}</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    `;
+                }
+
+                // GRAFİKLER
+                const isDark = document.documentElement.classList.contains('dark-mode');
+                const gridCol = isDark ? '#334155' : '#e2e8f0'; const fontCol = isDark ? '#94a3b8' : '#64748b';
+                Chart.defaults.color = fontCol; Chart.defaults.scale.grid.color = gridCol;
+
+                // 1. MAD Chart
+                if(window.madChartInstance) window.madChartInstance.destroy();
+                window.madChartInstance = new Chart(document.getElementById('madChartCanvas'), {
+                    type: 'bar',
+                    data: { labels: madMeans.map(m=>m.label), datasets: [{ label: 'Ortalama Mutlak Sapma', data: madMeans.map(m=>m.mean), backgroundColor: madMeans.map(m=>m.color+'99'), borderColor: madMeans.map(m=>m.color), borderWidth: 2 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: {display: false}, zoom: getZoomOptions() } }
+                });
+
+                // 2. Histogram
+                if(window.histChartInstance) window.histChartInstance.destroy();
+                window.histChartInstance = new Chart(document.getElementById('histChartCanvas'), {
+                    type: 'bar', data: { datasets: histDatasets },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { x: {type: 'linear'} }, plugins: { zoom: getZoomOptions() } }
+                });
+
+                // 3. F Eğrisi Grafiği
+                if(window.distChartInstance) window.distChartInstance.destroy();
+                
+                let critF = 0;
+                let accArea = 0;
+                let stepSize = 0.005;
+                for(let x=0.001; x<50; x+=stepSize) {
+                    let y = fPDF(x, df1, df2);
+                    if(!isNaN(y) && isFinite(y)) {
+                        accArea += y * stepSize;
+                        if(accArea >= (1 - alfa)) { critF = x; break; }
+                    }
+                }
+                if (critF === 0) critF = 3.0;
+
+                let maxDrawX = Math.max(critF * 1.5, fDegeri * 1.5, 5.0);
+                let fCurve = [], redArea = [], greenArea = [];
+
+                for(let x=0.01; x<=maxDrawX; x+=0.05) {
+                    let y = fPDF(x, df1, df2);
+                    if(!isNaN(y) && isFinite(y)) {
+                        fCurve.push({x: x, y: y});
+                        if(x <= critF) {
+                            greenArea.push({x: x, y: y});
+                        } else {
+                            if (redArea.length === 0) {
+                                let yCrit = fPDF(critF, df1, df2);
+                                greenArea.push({x: critF, y: yCrit}); 
+                                redArea.push({x: critF, y: yCrit});
+                            }
+                            redArea.push({x: x, y: y});
+                        }
+                    }
+                }
+
+                let yPeak = Math.max(...fCurve.map(p => p.y));
+                let hesaplananY = fPDF(fDegeri, df1, df2);
+
+                window.distChartInstance = new Chart(document.getElementById('distChartCanvas'), {
+                    type: 'line',
+                    data: { datasets: [
+                        { label: 'Eğri Hattı', data: fCurve, borderColor: isDark ? '#cbd5e1' : '#0f172a', borderWidth: 2, fill: false, pointRadius: 0, order: 1 },
+                        { label: '🟢 H₀ Reddedilemez (Kabul)', data: greenArea, backgroundColor: 'rgba(16, 185, 129, 0.25)', fill: 'origin', pointRadius: 0, borderWidth: 0, order: 4 },
+                        { label: '🔴 H₀ Reddedilir (Red - α)', data: redArea, backgroundColor: 'rgba(239, 68, 68, 0.35)', fill: 'origin', pointRadius: 0, borderWidth: 0, order: 5 },
+                        { label: `🔻 Kritik Değer (${critF.toFixed(3)})`, data: [{x: critF, y: 0}, {x: critF, y: yPeak}], borderColor: '#f59e0b', borderDash: [5, 5], borderWidth: 2, pointRadius: 0, fill: false, order: 2 },
+                        { label: `✨ Test İstatistiği (${fDegeri.toFixed(3)})`, data: [{x: fDegeri, y: 0}, {x: fDegeri, y: (!isNaN(hesaplananY) && isFinite(hesaplananY)) ? hesaplananY : yPeak/2}], borderColor: '#0ea5e9', borderWidth: 3, pointStyle: 'rectRot', pointRadius: 5, pointBackgroundColor: '#0ea5e9', fill: false, order: 3 }
+                    ]},
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { zoom: getZoomOptions(), legend: { position: 'bottom', labels: { boxWidth: 12, usePointStyle: true } } }, scales: {x: {type: 'linear'}} }
+                });
+
+                // 4. Power Chart
+                if(window.powerChartInstance) window.powerChartInstance.destroy();
+                let gucYuzdesi = (testGucu * 100).toFixed(1);
+                let hataYuzdesi = ((1 - testGucu) * 100).toFixed(1);
+
+                window.powerChartInstance = new Chart(document.getElementById('powerChartCanvas'), {
+                    type: 'doughnut',
+                    data: { 
+                        labels: ['🔵 Test Gücü (1-β)', '🟡 Tip II Hata (β)'], 
+                        datasets: [{ 
+                            data: [gucYuzdesi, hataYuzdesi], 
+                            backgroundColor: ['rgba(59, 130, 246, 0.8)', 'rgba(234, 179, 8, 0.8)'], 
+                            borderColor: ['#3b82f6', '#eab308'], 
+                            borderWidth: 1 
+                        }] 
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: {position: 'right'} } }
+                });
+
+                // KARAR KUTUSU
+                if (pDegeri > alfa) {
+                    safeSetClass('kararKutusu', "alert border-0 p-3 mb-4 rounded-10 d-flex align-items-start bg-success-subtle text-success");
+                    safeSetClass('kararIkon', "ri-checkbox-circle-fill text-success fs-24");
+                    safeSetText('kararBaslik', "Varyanslar Homojendir (H₀ Reddedilemez)");
+                    safeSetHTML('kararAciklama', `$p$-değeri (${pDegeri.toFixed(4)}) > $\\alpha$ (${alfa}) olduğundan, $H_0$ hipotezi reddedilemez. Grupların varyansları arasında <strong>istatistiksel olarak anlamlı bir farklılık bulunmamaktadır</strong>. $F$ istatistiği kabul bölgesine düşmüştür.`);
+                } else {
+                    safeSetClass('kararKutusu', "alert border-0 p-3 mb-4 rounded-10 d-flex align-items-start bg-danger-subtle text-danger");
+                    safeSetClass('kararIkon', "ri-error-warning-fill text-danger fs-24");
+                    safeSetText('kararBaslik', "Varyanslar Homojen Değildir (H₀ Reddedilir)");
+                    safeSetHTML('kararAciklama', `$p$-değeri (${pDegeri.toFixed(4)}) < $\\alpha$ (${alfa}) olduğundan, $H_0$ hipotezi reddedilir. En az iki grubun varyansı <strong>istatistiksel olarak birbirinden farklıdır</strong>. $F$ istatistiği sağ kuyruktaki kritik red bölgesine düşmüştür.`);
+                }
+
+                document.getElementById('loadingOverlay').style.display = 'none';
+                document.getElementById('aktifSonuc').style.display = 'block';
+                document.getElementById('leftPanelExtra').style.display = 'block';
+                if (window.MathJax && window.MathJax.typesetPromise) window.MathJax.typesetPromise([document.getElementById('aktifSonuc')]);
+                setTimeout(() => document.getElementById('aktifSonuc').scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+
+            } catch (error) {
+                document.getElementById('loadingOverlay').style.display = 'none';
+                document.getElementById('bosDurum').style.display = 'block';
+                console.error(error);
+                alert("İşlem sırasında bir hata oluştu.\nDetay: " + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
