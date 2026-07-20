@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routers import normality
 from routers import variance  # Levene vb. testler
+from routers import t_tests   # YENİ EKLENEN: t-Testleri modülü
 
 app = FastAPI(
     title="StatLabseu API Motoru",
@@ -10,27 +11,27 @@ app = FastAPI(
 )
 
 # GÜVENLİ CORS AYARI (Sadece senin sitelerine izin verir)
-# Buraya kendi domainlerini ve lokal test portlarını yazıyoruz
 origins = [
     "https://statlabseu.com",
     "https://www.statlabseu.com",
-    "http://localhost:5500",    # VS Code Live Server gibi araçlar için lokal port
+    "http://localhost:5500",    # VS Code Live Server
     "http://127.0.0.1:5500",
-    "http://localhost:3000",    # React/Vue kullanırsan lokal port
-    "http://127.0.0.1:8000"     # Doğrudan API testi için
+    "http://localhost:3000",    # React/Vue port
+    "http://127.0.0.1:8000"     # API test port
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,      # "*" yerine sadece listedeki sitelere izin veriyoruz!
-    allow_credentials=True,     # Özel domain belirttiğimiz için artık True yapabiliriz (İleride login sistemi yaparsan cookie'ler için şart)
-    allow_methods=["GET", "POST", "OPTIONS"], # İzin verilen HTTP metodlarını sınırla
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 
 # Router'ları projeye dahil et
 app.include_router(normality.router)
 app.include_router(variance.router)
+app.include_router(t_tests.router) # YENİ EKLENEN: t-Testlerini API'ye bağlıyoruz
 
 @app.get("/")
 async def root():
