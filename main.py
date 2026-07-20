@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from routers import normality
 from routers import variance  # Levene vb. testler
 from routers import t_tests   # YENİ EKLENEN: t-Testleri modülü
+from routers import z_tests
+
 
 app = FastAPI(
     title="StatLabseu API Motoru",
@@ -32,6 +34,7 @@ app.add_middleware(
 app.include_router(normality.router)
 app.include_router(variance.router)
 app.include_router(t_tests.router) # YENİ EKLENEN: t-Testlerini API'ye bağlıyoruz
+app.include_router(z_tests.router)
 
 @app.get("/")
 async def root():
