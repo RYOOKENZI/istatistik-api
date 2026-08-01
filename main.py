@@ -9,7 +9,7 @@ from routers import proportion_tests
 from routers import sign_tests
 from routers import independent_t_tests
 from routers import paired_t_tests
-
+from routers import independent_z_tests
 
 
 
@@ -47,6 +47,10 @@ app.include_router(proportion_tests.router)
 app.include_router(sign_tests.router)
 app.include_router(independent_t_tests.router)
 app.include_router(paired_t_tests.router)
+app.include_router(independent_z_tests.router)
+
+
+
 
 @app.get("/")
 async def root():
