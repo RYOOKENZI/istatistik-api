@@ -11,7 +11,7 @@ from routers import independent_t_tests
 from routers import paired_t_tests
 from routers import independent_z_tests
 from routers import mann_whitney
-
+from routers import mcnemar
 
 app = FastAPI(
     title="StatLabseu API Motoru",
