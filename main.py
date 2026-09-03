@@ -49,7 +49,7 @@ app.include_router(independent_t_tests.router)
 app.include_router(paired_t_tests.router)
 app.include_router(independent_z_tests.router)
 app.include_router(mann_whitney.router)
-
+app.include_router(mcnemar.router)
 
 
 @app.get("/")
