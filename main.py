@@ -13,7 +13,7 @@ from routers import independent_z_tests
 from routers import mann_whitney
 from routers import mcnemar
 from routers import anova
-
+from routers import two_way_anova
 
 
 
@@ -55,6 +55,10 @@ app.include_router(independent_z_tests.router)
 app.include_router(mann_whitney.router)
 app.include_router(mcnemar.router)
 app.include_router(anova.router)
+app.include_router(two_way_anova.router)
+
+
+
 
 @app.get("/")
 async def root():
