@@ -17,7 +17,7 @@ from routers import two_way_anova
 from routers import kruskal_wallis
 from routers import friedman
 from routers import pearson
-
+from routers import spearman
 
 
 
@@ -64,7 +64,7 @@ app.include_router(two_way_anova.router)
 app.include_router(kruskal_wallis.router)
 app.include_router(friedman.router)
 app.include_router(pearson.router)
-
+app.include_router(spearman.router)
 
 @app.get("/")
 async def root():
