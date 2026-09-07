@@ -15,7 +15,7 @@ from routers import mcnemar
 from routers import anova
 from routers import two_way_anova
 from routers import kruskal_wallis
-
+from routers import friedman
 
 app = FastAPI(
     title="StatLabseu API Motoru",
@@ -57,7 +57,7 @@ app.include_router(mcnemar.router)
 app.include_router(anova.router)
 app.include_router(two_way_anova.router)
 app.include_router(kruskal_wallis.router)
-
+app.include_router(friedman.router)
 
 
 
