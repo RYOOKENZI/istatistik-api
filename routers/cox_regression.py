@@ -33,10 +33,11 @@ def cox_regression_test(request: CoxRegressionRequest):
             raise HTTPException(status_code=400, detail=f"Gözlem sayısı (n={n}), bağımsız değişken sayısından (k={k}) yetersizdir. Olasılık maksimizasyonu çalıştırılamıyor.")
             
         # 2. Cox Modeli Kurulumu
-        tie_method = 'efron' if request.ties == 'efron' else 'breslow'
-        alpha_val = 1.0 - request.conf_level # Lifelines için alpha (0.05 vs)
+        # HATA DÜZELTİLDİ: 'ties' yerine 'tie_method' kullanıldı ve Efron/Breslow formata uygun hale getirildi.
+        t_method = 'Efron' if request.ties == 'efron' else 'Breslow'
+        alpha_val = 1.0 - request.conf_level 
         
-        cph = CoxPHFitter(alpha=alpha_val, ties=tie_method)
+        cph = CoxPHFitter(alpha=alpha_val, tie_method=t_method)
         
         try:
             cph.fit(df, duration_col='duration', event_col='event')
@@ -52,9 +53,8 @@ def cox_regression_test(request: CoxRegressionRequest):
         coefs = []
         hazard_ratios = []
         
-        # Kolon ismi bağımlılığından kurtulup, doğrudan matris'den CI çektik:
         ci_df = cph.confidence_intervals_
-        ci_hr_df = np.exp(ci_df) # Hazard Ratio CI
+        ci_hr_df = np.exp(ci_df) 
 
         for xn in x_names:
             coefs.append({
