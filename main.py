@@ -23,6 +23,9 @@ from routers import simple_linear_regression
 from routers import multiple_linear_regression
 from routers import logistic_regression
 from routers import kaplan_meier
+from routers import log_rank
+
+
 
 
 app = FastAPI(
@@ -73,6 +76,11 @@ app.include_router(simple_linear_regression.router)
 app.include_router(multiple_linear_regression.router)
 app.include_router(logistic_regression.router)
 app.include_router(kaplan_meier.router)
+app.include_router(log_rank.router)
+
+
+
+
 
 @app.get("/")
 async def root():
