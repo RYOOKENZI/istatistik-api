@@ -14,7 +14,7 @@ class CoxRegressionRequest(BaseModel):
     e: List[float] 
     alpha: float = 0.05
     conf_level: float = 0.95
-    ties: str = "efron"
+    ties: str = "efron" # Frontend'den gelse bile Python'da zorunlu Efron kullanacağız
 
 @router.post("/cox-regression")
 def cox_regression_test(request: CoxRegressionRequest):
@@ -33,11 +33,10 @@ def cox_regression_test(request: CoxRegressionRequest):
             raise HTTPException(status_code=400, detail=f"Gözlem sayısı (n={n}), bağımsız değişken sayısından (k={k}) yetersizdir. Olasılık maksimizasyonu çalıştırılamıyor.")
             
         # 2. Cox Modeli Kurulumu
-        # HATA DÜZELTİLDİ: 'ties' yerine 'tie_method' kullanıldı ve Efron/Breslow formata uygun hale getirildi.
-        t_method = 'Efron' if request.ties == 'efron' else 'Breslow'
+        # HATA DÜZELTİLDİ: 'ties' parametresi lifelines'ın yeni versiyonlarında otomatik (Efron) yapıldığı için kaldırıldı.
         alpha_val = 1.0 - request.conf_level 
         
-        cph = CoxPHFitter(alpha=alpha_val, tie_method=t_method)
+        cph = CoxPHFitter(alpha=alpha_val)
         
         try:
             cph.fit(df, duration_col='duration', event_col='event')
