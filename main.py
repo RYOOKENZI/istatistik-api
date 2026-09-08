@@ -18,6 +18,7 @@ from routers import kruskal_wallis
 from routers import friedman
 from routers import pearson
 from routers import spearman
+from routers import kendall
 
 
 
@@ -65,6 +66,11 @@ app.include_router(kruskal_wallis.router)
 app.include_router(friedman.router)
 app.include_router(pearson.router)
 app.include_router(spearman.router)
+app.include_router(kendall.router)
+
+
+
+
 
 @app.get("/")
 async def root():
