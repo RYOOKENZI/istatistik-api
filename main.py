@@ -21,7 +21,7 @@ from routers import spearman
 from routers import kendall
 from routers import simple_linear_regression
 from routers import multiple_linear_regression
-
+from routers import logistic_regression
 
 
 
@@ -71,7 +71,7 @@ app.include_router(spearman.router)
 app.include_router(kendall.router)
 app.include_router(simple_linear_regression.router)
 app.include_router(multiple_linear_regression.router)
-
+app.include_router(logistic_regression.router)
 
 
 @app.get("/")
