@@ -20,6 +20,7 @@ from routers import pearson
 from routers import spearman
 from routers import kendall
 from routers import simple_linear_regression
+from routers import multiple_linear_regression
 
 
 
@@ -69,7 +70,7 @@ app.include_router(pearson.router)
 app.include_router(spearman.router)
 app.include_router(kendall.router)
 app.include_router(simple_linear_regression.router)
-
+app.include_router(multiple_linear_regression.router)
 
 
 
