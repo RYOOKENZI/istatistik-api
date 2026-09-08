@@ -22,7 +22,7 @@ from routers import kendall
 from routers import simple_linear_regression
 from routers import multiple_linear_regression
 from routers import logistic_regression
-
+from routers import kaplan_meier
 
 
 app = FastAPI(
@@ -72,7 +72,7 @@ app.include_router(kendall.router)
 app.include_router(simple_linear_regression.router)
 app.include_router(multiple_linear_regression.router)
 app.include_router(logistic_regression.router)
-
+app.include_router(kaplan_meier.router)
 
 @app.get("/")
 async def root():
