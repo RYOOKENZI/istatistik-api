@@ -1,8 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+# MEVCUT ROUTER'LARINIZ
 from routers import normality
-from routers import variance  # Levene vb. testler
-from routers import t_tests   # YENİ EKLENEN: t-Testleri modülü
+from routers import variance  
+from routers import t_tests   
 from routers import z_tests
 from routers import wilcoxon_tests
 from routers import proportion_tests
@@ -26,8 +28,16 @@ from routers import kaplan_meier
 from routers import log_rank
 from routers import cox_regression
 
-
-
+# --- YENİ EKLENEN: ZAMAN SERİSİ ROUTER'LARI ---
+from routers import ts_stationarity
+from routers import ts_autocorrelation
+from routers import ts_decomposition
+from routers import ts_modeling
+from routers import ts_diagnostics
+from routers import ts_forecast
+from routers import ts_volatility
+from routers import ts_advanced
+# ----------------------------------------------
 
 app = FastAPI(
     title="StatLabseu API Motoru",
@@ -53,10 +63,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Router'ları projeye dahil et
+# MEVCUT ROUTER'LARI PROJEYE DAHİL ET
 app.include_router(normality.router)
 app.include_router(variance.router)
-app.include_router(t_tests.router) # YENİ EKLENEN: t-Testlerini API'ye bağlıyoruz
+app.include_router(t_tests.router) 
 app.include_router(z_tests.router)
 app.include_router(wilcoxon_tests.router)
 app.include_router(proportion_tests.router)
@@ -80,7 +90,16 @@ app.include_router(kaplan_meier.router)
 app.include_router(log_rank.router)
 app.include_router(cox_regression.router)
 
-
+# --- YENİ EKLENEN: ZAMAN SERİSİ ROUTER'LARI DAHİL ET ---
+app.include_router(ts_stationarity.router)
+app.include_router(ts_autocorrelation.router)
+app.include_router(ts_decomposition.router)
+app.include_router(ts_modeling.router)
+app.include_router(ts_diagnostics.router)
+app.include_router(ts_forecast.router)
+app.include_router(ts_volatility.router)
+app.include_router(ts_advanced.router)
+# -------------------------------------------------------
 
 
 @app.get("/")
