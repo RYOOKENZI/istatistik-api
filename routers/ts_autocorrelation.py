@@ -5,14 +5,19 @@ from typing import List, Optional
 import pandas as pd
 import numpy as np
 
+# statsmodels kütüphaneleri
 from statsmodels.tsa.stattools import acf, pacf
 from statsmodels.stats.diagnostic import acorr_ljungbox
+from statsmodels.stats.stattools import durbin_watson
+from scipy.stats import norm
 
 router = APIRouter(prefix="/test", tags=["Zaman Serisi ACF/PACF"])
 
+# HTML'deki let reqBody = { y: cleanY, nlags: maxLag, alpha: alfa }; yapısına BİREBİR uyumlu model
 class AutocorrelationRequest(BaseModel):
     y: List[Optional[float]]
-    lags: int = 40  
+    nlags: int = 40  
+    alpha: float = 0.05 
 
 @router.post("/autocorrelation")
 def calculate_autocorrelation(req: AutocorrelationRequest):
@@ -23,62 +28,72 @@ def calculate_autocorrelation(req: AutocorrelationRequest):
         if n_obs < 10: 
             raise ValueError("Otokorelasyon hesabı için çok az veri var.")
 
-        # Maksimum lag sayısını veri boyutuna göre sınırla
-        max_lags = min(req.lags, int(n_obs / 2) - 1)
+        max_lags = req.nlags
+        if max_lags >= n_obs / 2: 
+            max_lags = int(n_obs / 2) - 1
         if max_lags < 1: max_lags = 1
 
-        # İstatistiksel Hesaplamalar
-        acf_vals, acf_conf, qstats, q_pvals = acf(series, nlags=max_lags, alpha=0.05, qstat=True, fft=True)
-        pacf_vals, pacf_conf = pacf(series, nlags=max_lags, alpha=0.05, method='yw')
+        # 1. Durbin-Watson İstatistiği (HTML rRes.dw bekliyor)
+        dw_stat = float(durbin_watson(series))
 
-        lb_df = acorr_ljungbox(series, lags=[max_lags], return_df=True)
-        lb_stat = float(lb_df['lb_stat'].iloc[0])
-        lb_pval = float(lb_df['lb_pvalue'].iloc[0])
+        # 2. ACF ve PACF Hesaplamaları
+        acf_vals, acf_conf = acf(series, nlags=max_lags, alpha=req.alpha, fft=True)
+        pacf_vals, pacf_conf = pacf(series, nlags=max_lags, alpha=req.alpha, method='yw')
+
+        # Z değerini (Güven Sınırı Çarpanı) buluyoruz (Örn: 0.05 için 1.96)
+        z_val = abs(norm.ppf(req.alpha / 2))
 
         acf_list = []
         pacf_list = []
 
-        # JAVASCRIPT ÇÖKMESİN DİYE TÜM OLASI İSİMLERİ (ZIRH OLARAK) EKLİYORUZ
+        # HTML'in beklediği ACF ve PACF tablosunu döngüyle hazırlıyoruz
         for i in range(max_lags + 1):
-            q_val = float(qstats[i-1]) if i > 0 else 0.0
-            p_val = float(q_pvals[i-1]) if i > 0 else 1.0
-
-            if np.isnan(q_val): q_val = 0.0
-            if np.isnan(p_val): p_val = 1.0
+            # Standart Hata (SE) hesaplaması (HTML a.se ve p.se bekliyor)
+            a_se = float(acf_conf[i, 1] - acf_vals[i]) / z_val if z_val > 0 else 0
+            p_se = float(pacf_conf[i, 1] - pacf_vals[i]) / z_val if z_val > 0 else 0
+            
+            if i == 0:
+                a_se, p_se = 0.0, 0.0
 
             acf_list.append({
                 "lag": i,
                 "value": float(acf_vals[i]),
-                "acf": float(acf_vals[i]),            # HTML 'acf' arıyorsa
+                "se": a_se,
                 "lower": float(acf_conf[i, 0] - acf_vals[i]),
-                "upper": float(acf_conf[i, 1] - acf_vals[i]),
-                "q": q_val,                           # HTML 'q' arıyorsa
-                "q_stat": q_val,                      # HTML 'q_stat' arıyorsa
-                "p": p_val,                           # HTML 'p' arıyorsa
-                "p_value": p_val,                     # HTML 'p_value' arıyorsa
-                "prob": p_val                         # HTML 'prob' arıyorsa
+                "upper": float(acf_conf[i, 1] - acf_vals[i])
             })
             
             pacf_list.append({
                 "lag": i,
                 "value": float(pacf_vals[i]),
-                "pacf": float(pacf_vals[i]),          # HTML 'pacf' arıyorsa
+                "se": p_se,
                 "lower": float(pacf_conf[i, 0] - pacf_vals[i]),
                 "upper": float(pacf_conf[i, 1] - pacf_vals[i])
             })
 
+        # 3. Ljung-Box ve Box-Pierce Testleri (HTML rRes.lb array bekliyor)
+        lags_to_test = [l for l in [5, 10, 15, max_lags] if l > 0 and l <= max_lags]
+        lags_to_test = list(sorted(set(lags_to_test))) # Tekrarları sil ve sırala
+
+        lb_list = []
+        if lags_to_test:
+            # boxpierce=True parametresi ile hem Ljung-Box hem de Box-Pierce hesaplanır
+            lb_df = acorr_ljungbox(series, lags=lags_to_test, return_df=True, boxpierce=True)
+            for lag in lags_to_test:
+                lb_list.append({
+                    "lag": int(lag),
+                    "lb_stat": float(lb_df.loc[lag, 'lb_stat']),
+                    "lb_p": float(lb_df.loc[lag, 'lb_pvalue']),
+                    "bp_stat": float(lb_df.loc[lag, 'bp_stat']),
+                    "bp_p": float(lb_df.loc[lag, 'bp_pvalue'])
+                })
+
+        # Bütün veriyi HTML'in beklediği yapıda JSON olarak döndürüyoruz
         return {
             "acf": acf_list,
             "pacf": pacf_list,
-            "ljung_box": {
-                "stat": lb_stat,
-                "q": lb_stat,
-                "q_stat": lb_stat,
-                "p_value": lb_pval, 
-                "p": lb_pval,
-                "prob": lb_pval,
-                "lag": max_lags
-            }
+            "lb": lb_list,
+            "dw": dw_stat
         }
 
     except Exception as e:
