@@ -1,3 +1,4 @@
+# routers/ts_stationarity.py
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
@@ -28,26 +29,35 @@ def calculate_stationarity(req: StationarityRequest):
 
         results = {}
 
-        # 1. ADF
+        # 1. ADF TESTİ
         try:
             adf = ADF(series, trend=arch_trend, method=req.lag_method)
             results["adf"] = {"stat": float(adf.stat), "p_value": float(adf.pvalue), "lag": int(adf.lags), "crit": float(adf.critical_values.get('5%', 0))}
         except: results["adf"] = {"stat": 0, "p_value": 1.0, "lag": 0, "crit": 0}
 
-        # 2. KPSS
+        # 2. KPSS TESTİ
         try:
             kpss_trend = 'c' if arch_trend == 'n' else arch_trend
             kpss = KPSS(series, trend=kpss_trend)
             results["kpss"] = {"stat": float(kpss.stat), "p_value": float(kpss.pvalue), "lag": int(kpss.lags), "crit": float(kpss.critical_values.get('5%', 0))}
         except: results["kpss"] = {"stat": 0, "p_value": 0.0, "lag": 0, "crit": 0}
 
-        # 3. Phillips-Perron
+        # 3. PHILLIPS-PERRON TESTİ
         try:
             pp = PhillipsPerron(series, trend=arch_trend)
             results["pp"] = {"stat": float(pp.stat), "p_value": float(pp.pvalue), "lag": int(pp.lags), "crit": float(pp.critical_values.get('5%', 0))}
         except: results["pp"] = {"stat": 0, "p_value": 1.0, "lag": 0, "crit": 0}
 
-        # 4. Zivot-Andrews
+        # 4. DF-GLS TESTİ (UNUTULAN TEST EKLENDİ)
+        try:
+            gls_trend = 'c' if arch_trend == 'n' else arch_trend
+            dfgls = DFGLS(series, trend=gls_trend, method=req.lag_method)
+            # DFGLS her versiyonda p-value döndürmeyebilir, güvenli okuma yapıyoruz:
+            pval = float(getattr(dfgls, 'pvalue', 1.0)) 
+            results["dfgls"] = {"stat": float(dfgls.stat), "p_value": pval, "lag": int(dfgls.lags), "crit": float(dfgls.critical_values.get('5%', 0))}
+        except: results["dfgls"] = {"stat": 0, "p_value": 1.0, "lag": 0, "crit": 0}
+
+        # 5. ZIVOT-ANDREWS TESTİ
         try:
             za = ZivotAndrews(series, trend=arch_trend if arch_trend in ['c','t','ct'] else 'c')
             results["za"] = {"stat": float(za.stat), "p_value": float(za.pvalue), "lag": int(za.lags), "crit": float(za.critical_values.get('5%', 0))}
